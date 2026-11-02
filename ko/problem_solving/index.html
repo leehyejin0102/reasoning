@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+<title>문제해결 - 추론능력검사</title>
+<script src="../../vendor/jspsych.js"></script>
+<script src="../../vendor/plugin-html-keyboard-response.js"></script>
+<script src="../../assets/flow.js"></script>
+<link href="../../vendor/jspsych.css" rel="stylesheet" type="text/css" />
+<link href="../../assets/engine.css" rel="stylesheet" type="text/css" />
+</head>
+<body></body>
+<script src="data.js"></script>
+<script>
+// ════════════════════════════════════════════════════════════
+// ▼ 문구 수정 구역 — source/pages/make-pages.py 에서 만든 파일입니다(고칠 때는 그 파일을 고치고 다시 생성).
+//   <br> = 줄바꿈, <b>…</b> = 굵게.  문항 그림·정답은 data.js(자동 생성)에 있습니다.
+// ════════════════════════════════════════════════════════════
+window.CFG = {
+ "id": "problem_solving",
+ "lang": "ko",
+ "kind": "choice",
+ "tag": "문제해결",
+ "name": "문제해결",
+ "badge": "한국추론능력검사 · 핵심 소검사",
+ "instr": "지금부터 그림을 보면서 문제를 풀 거예요.<br>먼저 어떤 일이 벌어졌는지 자세히 보고, 그 상황을 해결하는 데 <b>가장 잘 맞는 그림 하나</b>를 골라주세요.<br>그림 속 사람은 무엇을 하려고 하는지, 그리고 그 다음에 어떤 일이 일어날지 생각해 보세요.",
+ "prompt": "왼쪽 상황을 해결하는 데 가장 잘 맞는 그림을 골라 주세요.",
+ "explain": [
+  "그림을 보면 책상 위에 쓰레기가 있어요. ①번은 그냥 지나치는 모습이고, ②번은 쓰레기를 주워 쓰레기통에 넣는 모습이에요.<br>이 상황을 해결하려면 쓰레기를 치워야 하니까, 정답은 <b>②번</b>이에요.",
+  "그림을 보면 컵이 책상 끝에 있어서 떨어질 수 있어요. ①번은 컵을 안전한 곳으로 옮기는 모습, ②번은 사진을 찍는 모습, ③번은 컵을 밀어 떨어뜨리는 모습, ④번은 그냥 보고만 있는 모습이에요.<br>컵이 떨어지지 않도록 해야 하니까, 정답은 <b>①번</b>이에요."
+ ]
+};
+</script>
+<script src="../../assets/engine.js"></script>
+</html>

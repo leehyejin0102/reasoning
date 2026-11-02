@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="한국추론능력검사 온라인 실시 · (사)중앙임상심리연구소">
+  <meta name="color-scheme" content="light"><title>한국추론능력검사</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%232554c7'/%3E%3Ccircle cx='32' cy='32' r='17' fill='none' stroke='%23e8f4e3' stroke-width='6' stroke-dasharray='34 9'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+<script defer src="config.js"></script><script defer src="tasks.js"></script><script defer src="participant.js"></script><script defer src="analysis.js"></script><script defer src="results.js"></script><script defer src="workbook.js"></script><script defer src="data-tables.js"></script><script defer src="export.js"></script><script defer src="upload.js"></script><script defer src="i18n.js"></script><script defer src="app.js"></script>
+</head>
+<body>
+  <header class="site-header"><a class="brand institute-brand" href="./" aria-label="(사)중앙임상심리연구소 · 처음 화면"><img class="institute-logo" src="assets/institute-logo.png" width="640" height="226" alt=""><span class="institute-name">(사)중앙임상심리연구소</span></a><div class="header-actions"><button id="lang-change" class="lang-pill" hidden></button><button id="settings-open" class="text-button" title="연구자 설정" aria-label="연구자 설정">⚙</button></div></header>
+
+  <!-- 1) 표지 -->
+  <main id="cover" class="cover-shell">
+    <div class="cover-card">
+      <div class="cover-top"></div>
+      <div class="cover-band"><div class="cover-title">한국추론능력검사</div><div class="cover-sub">KOREAN REASONING ABILITY TEST</div></div>
+      <div class="cover-sheet" aria-hidden="true"><span></span></div>
+      <div class="cover-body">
+        <div class="cover-kind">온라인 검사 · 만 2~11세</div>
+        <div class="cover-blocks" aria-hidden="true"><i class="b1"></i><i class="b2"></i><i class="b3"></i><br><i class="b4"></i><i class="b1"></i><i class="b2"></i><i class="b5"></i><i class="b4"></i></div>
+        <button class="primary cover-start" id="cover-start">검사 시작하기 <span>↗</span></button>
+      </div>
+      <img class="cover-logo" src="assets/institute-logo.png" width="640" height="226" alt="CCPI">
+      <div class="cover-bottom"><span>(사)중앙임상심리연구소</span><b>추론능력검사</b></div>
+    </div>
+  </main>
+
+  <!-- 2) 언어 선택 -->
+  <main id="lang-select" class="lang-shell" hidden>
+    <div class="eyebrow">LANGUAGE · 언어 선택 · NGÔN NGỮ</div>
+    <h1>검사 언어를 선택해 주세요<br><small>Vui lòng chọn ngôn ngữ</small></h1>
+    <div class="lang-cards">
+      <button class="lang-card" data-lang="ko"><span class="lang-code">KO</span><b>한국어</b><span>한국어로 검사를 진행합니다.</span></button>
+      <button class="lang-card" data-lang="vi"><span class="lang-code">VI</span><b>Tiếng Việt</b><span>Thực hiện bài kiểm tra bằng tiếng Việt.</span></button>
+    </div>
+    <div id="lang-pending" class="lang-pending" hidden><b>Phiên bản tiếng Việt đang được chuẩn bị.</b><br>베트남어 버전은 준비 중입니다. 한국어를 선택해 주세요.</div>
+  </main>
+
+  <!-- 3) 검사 선택 · 참가자 정보 -->
+  <main id="home" class="home-shell" hidden>
+    <div class="home-intro"><div class="eyebrow" data-i18n="eyebrow">REASONING ABILITY TEST · 추론능력검사</div>
+    <h1 data-i18n="title">한국추론능력검사</h1>
+    <p class="lead" data-i18n="lead"></p></div>
+    <div class="section-heading"><h2 data-i18n="coreTitle">핵심 소검사</h2><p data-i18n="coreHint"></p></div>
+    <section class="task-grid" id="core-grid" aria-label="핵심 소검사"></section>
+    <div class="section-heading supp-heading"><h2 data-i18n="suppTitle">보충 소검사</h2><p data-i18n="suppHint"></p></div>
+    <section class="task-grid" id="supp-grid" aria-label="보충 소검사"></section>
+    <form id="start-form" class="start-panel"><h2 class="form-heading" data-i18n="participantHeading">참가자 정보</h2><div class="participant-fields"><div class="participant-field"><label for="participant" data-i18n="participant">코드번호 *</label><input id="participant" name="participant" placeholder="예: P001" autocomplete="off" maxlength="40" pattern="[A-Za-z0-9_\-]+" required aria-describedby="code-hint"><span id="code-hint" data-i18n="codeHint"></span></div><div class="participant-field"><label for="participant-name" data-i18n="participantName">이름 (선택)</label><input id="participant-name" name="participant-name" autocomplete="off" maxlength="80" aria-describedby="name-hint"><span id="name-hint" data-i18n="nameHint"></span></div><div class="participant-field"><label for="birth-date" data-i18n="birthDate">생년월일 *</label><input id="birth-date" name="birth-date" type="date" min="1900-01-01" required aria-describedby="birth-hint"><span id="birth-hint" data-i18n="birthHint"></span></div></div><div class="start-actions"><button type="submit" class="primary" data-i18n="start">검사 시작 <span>↗</span></button></div><p id="form-error" class="form-error" role="alert"></p></form>
+    <p class="bottom-note" data-i18n="bottomNote"></p>
+    <div id="recovery" hidden class="recovery"><span data-i18n="recoveryText"></span><button id="recover-download" class="text-button" data-i18n="download"></button><button id="recover-result-json" class="text-button" data-i18n="downloadResultJson"></button><button id="recover-json" class="text-button" data-i18n="downloadJson"></button></div>
+    <footer><span data-i18n="footer"></span><span id="version-label"></span></footer>
+  </main>
+  <section id="run-shell" hidden><div class="run-header"><span id="run-label"></span><span class="run-right"><span id="run-progress"></span><button id="run-stop" class="text-button"></button></span></div><div id="experiment"></div></section>
+  <section id="results" hidden class="result-shell"></section>
+  <dialog id="settings-dialog"><form method="dialog" class="dialog-head"><h2>연구자 설정</h2><button class="icon-button" aria-label="닫기">×</button></form><p>참가자에게 적용할 저장 설정입니다. 검사 시작 후에는 변경되지 않습니다.</p><label class="field">DataPipe Experiment ID<input id="pipe-id" placeholder="연결 전에는 비워 두세요" maxlength="80"></label><label class="check-line"><input type="checkbox" id="auto-upload" checked>검사 완료 후 자동 전송</label><details><summary>저장 방식</summary><ul><li>검사가 끝나면 결과 JSON 1개(<code>코드_시각_ID_results.json</code>)가 DataPipe 로 한 번 전송됩니다. DataPipe 실험 설정의 Required fields 는 <b>result</b> 로 두세요.</li><li>13개 소검사는 <code>ko/</code>·<code>vi/</code> 폴더의 화면을 그대로 사용하며, 검사별 문항 CSV 는 이 화면이 JSON 으로 합칩니다.</li><li>전송이 불확실하면 결과 화면에서 JSON 을 내려받아 보관하세요. 엑셀은 json_to_excel.html 에서 만듭니다.</li></ul></details><div class="dialog-actions"><button id="save-settings" class="primary" type="button">설정 적용</button></div><p class="muted">설정은 이 브라우저에 저장됩니다. 계정 비밀번호나 Google 토큰은 입력하지 마세요.</p></dialog>
+  <noscript>검사를 실행하려면 JavaScript를 활성화해 주세요.</noscript>
+</body>
+</html>

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+<title>언어 단서 결합 추론 과제 - 추론능력검사</title>
+<script src="../../vendor/jspsych.js"></script>
+<script src="../../vendor/plugin-html-keyboard-response.js"></script>
+<script src="../../assets/flow.js"></script>
+<link href="../../vendor/jspsych.css" rel="stylesheet" type="text/css" />
+<link href="../../assets/engine.css" rel="stylesheet" type="text/css" />
+</head>
+<body></body>
+<script src="data.js"></script>
+<script>
+// ════════════════════════════════════════════════════════════
+// ▼ 문구 수정 구역 — source/pages/make-pages.py 에서 만든 파일입니다(고칠 때는 그 파일을 고치고 다시 생성).
+//   <br> = 줄바꿈, <b>…</b> = 굵게.  문항 그림·정답은 data.js(자동 생성)에 있습니다.
+// ════════════════════════════════════════════════════════════
+window.CFG = {
+ "id": "verbal_cue",
+ "lang": "ko",
+ "kind": "choice",
+ "tag": "언어 단서 결합 추론 과제",
+ "name": "언어 단서 결합 추론 과제",
+ "badge": "한국추론능력검사 · 핵심 소검사",
+ "instr": "지금부터 설명을 읽고 문제를 풀 거예요.<br>설명에는 몇 가지 조건이 들어 있어요.<br>그림들을 잘 보고, 설명에 나온 <b>조건을 모두 만족하는 것 하나</b>를 고르세요.<br>일부 그림은 조건을 일부만 만족하거나 맞지 않을 수 있습니다.<br>모든 조건을 다 만족하는 것 하나만 선택하면 됩니다.",
+ "prompt": "",
+ "explain": [
+  "설명에 ‘ㅂ으로 시작하고, 옷인 것’이라는 조건이 있어요. 사과와 핸드폰은 ㅂ으로 시작하지 않고 옷도 아니에요.<br>바지는 ㅂ으로 시작하고 옷이니까, 정답은 <b>③번 ‘바지’</b>예요.",
+  "설명에 ‘ㄱ으로 시작하고, 동물인 것’이라는 조건이 있어요. 의자와 풀잎은 ㄱ으로 시작하지도 않고 동물도 아니에요.<br>고양이는 ㄱ으로 시작하고 동물이니까, 정답은 <b>①번 ‘고양이’</b>예요."
+ ]
+};
+</script>
+<script src="../../assets/engine.js"></script>
+</html>

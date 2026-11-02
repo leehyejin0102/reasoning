@@ -1,0 +1,7 @@
+{
+  "name": "ccpi-intelligence-battery",
+  "version": "1.0.0",
+  "private": true,
+  "description": "지능검사 6개 소검사(수리계산·공통의미·단어이해·지각조직·지각운동·논리추론) 온라인 검사 — 한국어/베트남어",
+  "scripts": { "start": "node serve.cjs", "build": "node build-single.cjs && node build-converter.cjs", "test": "node --test tests/*.test.cjs" }
+}

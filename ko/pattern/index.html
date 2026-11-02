@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+<title>패턴 검사_반복/성장 - 추론능력검사</title>
+<script src="../../vendor/jspsych.js"></script>
+<script src="../../vendor/plugin-html-keyboard-response.js"></script>
+<script src="../../assets/flow.js"></script>
+<link href="../../vendor/jspsych.css" rel="stylesheet" type="text/css" />
+<link href="../../assets/engine.css" rel="stylesheet" type="text/css" />
+</head>
+<body></body>
+<script src="data.js"></script>
+<script>
+// ════════════════════════════════════════════════════════════
+// ▼ 문구 수정 구역 — source/pages/make-pages.py 에서 만든 파일입니다(고칠 때는 그 파일을 고치고 다시 생성).
+//   <br> = 줄바꿈, <b>…</b> = 굵게.  문항 그림·정답은 data.js(자동 생성)에 있습니다.
+// ════════════════════════════════════════════════════════════
+window.CFG = {
+ "id": "pattern",
+ "lang": "ko",
+ "kind": "choice",
+ "tag": "패턴 검사_반복/성장",
+ "name": "패턴 검사_반복/성장",
+ "badge": "한국추론능력검사 · 핵심 소검사",
+ "instr": "지금부터 그림들이 순서대로 나올 거예요.<br>그림이 어떻게 바뀌는지 잘 살펴보세요.<br>어떤 규칙으로 바뀌는지 생각한 다음에,<br><b>물음표 자리</b>에 올 그림을 아래 보기 중에서 가장 적절한 것 하나를 골라주세요.",
+ "prompt": "물음표 자리에 올 그림을 골라 주세요.",
+ "explain": [
+  "그림을 보면 빨간색 네모와 파란색 세모, 두 가지 모양이 번갈아 나오고 있어요.<br>그래서 빨간색 네모 다음 물음표 자리에는 <b>파란색 세모</b>가 와야 해요. 정답은 <b>3번</b>이에요.",
+  "그림을 보면 파란색 네모, 노란색 동그라미, 초록색 세모가 한 묶음으로 반복되고 있어요.<br>그래서 물음표 자리에는 다시 <b>파란색 네모, 노란색 동그라미, 초록색 세모</b> 한 묶음이 와야 해요. 정답은 <b>4번</b>이에요."
+ ]
+};
+</script>
+<script src="../../assets/engine.js"></script>
+</html>

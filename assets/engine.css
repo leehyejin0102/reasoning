@@ -1,0 +1,132 @@
+/* 추론능력검사 소검사 공통 스타일 — 지능검사 샘플(ccpi 공통 형식)의 색·글꼴·버튼을 그대로 따릅니다. */
+html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; }
+body { font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Segoe UI', sans-serif; background: #f4f6fb;
+  display: flex; align-items: center; justify-content: center; -webkit-tap-highlight-color: transparent; }
+#jspsych-content-wrapper, .jspsych-display-element, #jspsych-content {
+  height: 100% !important; width: 100% !important; margin: 0 !important; padding: 0 !important;
+  overflow: hidden !important; display: flex !important; align-items: center !important; justify-content: center !important; }
+button { font-family: inherit; touch-action: manipulation; }
+
+/* 고정 크기 프레임(1300×950)을 창 크기에 맞춰 통째로 scale */
+.math-wrap { width: 1340px; height: 950px; box-sizing: border-box; margin: 0; padding: 36px 80px;
+  display: flex; flex-direction: column; justify-content: center; overflow: hidden; transform-origin: center center; flex-shrink: 0; }
+.content-col { width: 1120px; margin: 0 auto; position: relative; }
+.math-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; min-height: 52px; }
+.math-tag { font-weight: 700; font-size: 31px; color: #1c3f94; border-left: 6px solid #2554c7; padding-left: 16px; }
+.header-right { display: flex; align-items: center; gap: 14px; }
+.math-progress { background: #2554c7; color: #fff; font-weight: 600; font-size: 20px; padding: 12px 26px; border-radius: 26px; }
+.math-progress.practice { background: #fff; color: #2554c7; border: 2px solid #2554c7; padding: 10px 24px; }
+.timer-badge { visibility: hidden; background: #fdecea; color: #c62828; border: 2px solid #f3c6c2;
+  font-weight: 700; font-size: 20px; padding: 8px 20px; border-radius: 24px; min-width: 64px; text-align: center; }
+.timer-badge.on { visibility: visible; animation: timer-pulse 1s ease-in-out infinite; }
+@keyframes timer-pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+
+.info-box { text-wrap: balance; word-break: keep-all; background: #fafbfe; border: 1px solid #e1e6f2; border-radius: 16px;
+  padding: 16px 28px; font-size: 26px; line-height: 1.6; color: #2b2b2b; margin-bottom: 14px; text-align: center; }
+.info-box b { font-weight: 800; }
+.prompt-line { text-align: center; font-size: 25px; font-weight: 700; color: #1c3f94; margin: 0 0 12px; word-break: keep-all; }
+.prompt-line.caption { font-size: 34px; color: #1f2430; margin: 14px 0 4px; }
+
+/* 문항 그림 + 선택 영역 */
+.stage-wrap { display: flex; justify-content: center; }
+.stage { position: relative; background: #fff; border-radius: 14px; box-shadow: 0 6px 24px rgba(30,50,100,.10); overflow: hidden; }
+.stage img { display: block; width: 100%; height: 100%; user-select: none; -webkit-user-drag: none; pointer-events: none; }
+.hs { position: absolute; background: transparent; border: 0; padding: 0; margin: 0; cursor: pointer; border-radius: 8px; }
+.hs:hover { background: rgba(37,84,199,.06); }
+.hs.sel { box-shadow: inset 0 0 0 6px #2554c7; background: rgba(37,84,199,.13); }
+.hs.key { box-shadow: inset 0 0 0 6px #f08c00; background: rgba(240,140,0,.10); }
+.hs.short { box-shadow: inset 0 0 0 6px #2554c7; background: rgba(37,84,199,.13); }
+.hs.long { box-shadow: inset 0 0 0 6px #e8590c; background: rgba(232,89,12,.12); }
+.mockup-inert .hs { cursor: default; }
+.hs .badge { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); min-width: 54px; height: 54px; border-radius: 27px;
+  background: #2554c7; color: #fff; font-size: 30px; font-weight: 800; display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 12px rgba(37,84,199,.35); padding: 0 6px; box-sizing: border-box; }
+.hs.key .badge { background: #f08c00; box-shadow: 0 4px 12px rgba(240,140,0,.35); }
+.hs .tag { position: absolute; top: 6px; left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: 17px; font-weight: 800;
+  color: #fff; padding: 3px 10px; border-radius: 12px; }
+.hs.short .tag { background: #2554c7; } .hs.long .tag { background: #e8590c; }
+
+/* 가장 짧은 것 / 가장 긴 것 슬롯 (물리적 길이 전이 17·18번) */
+.slot-row { display: flex; justify-content: center; gap: 22px; margin: 0 0 12px; }
+.slot { min-width: 330px; padding: 10px 22px; border-radius: 14px; border: 2px solid #c9dcf0; background: #fff; font-size: 22px;
+  font-weight: 700; color: #44506b; cursor: pointer; display: flex; align-items: center; gap: 12px; justify-content: center; }
+.slot .k { color: #fff; border-radius: 10px; padding: 3px 12px; font-size: 19px; }
+.slot.short .k { background: #2554c7; } .slot.long .k { background: #e8590c; }
+.slot.active.short { border-color: #2554c7; box-shadow: 0 0 0 4px #c9d8f7; }
+.slot.active.long { border-color: #e8590c; box-shadow: 0 0 0 4px #fadacb; }
+.slot .v { min-width: 120px; text-align: left; color: #1c2d5a; }
+
+/* 예측추론: 글자 선지 4개 */
+.opt-list { display: grid; grid-template-columns: 1fr; gap: 12px; margin-top: 18px; }
+.opt { display: flex; align-items: center; box-sizing: border-box; background: #fff; border: 2px solid #c9dcf0;
+  border-radius: 14px; padding: 0 18px; min-height: 74px; cursor: pointer; text-align: left; width: 100%;
+  transition: background .1s ease, border-color .1s ease; }
+.opt:hover { background: #f4f8fe; }
+.opt .num { flex: 0 0 44px; height: 44px; border-radius: 50%; background: #6a9ad8; color: #fff; font-weight: 700; font-size: 22px;
+  display: flex; align-items: center; justify-content: center; }
+.opt .sep { flex: 0 0 1px; height: 38px; background: #d6e2f2; margin: 0 16px; }
+.opt .txt { flex: 1; font-weight: 700; font-size: 24px; color: #1c2d5a; line-height: 1.35; word-break: keep-all; padding: 10px 0; }
+.opt.sel { background: #dce8fb; border-color: #2554c7; } .opt.sel .num { background: #2554c7; }
+.opt.key { border-color: #f08c00; box-shadow: 0 0 0 3px #fde3c0; } .opt.key .num { background: #f08c00; }
+.mockup-inert .opt { cursor: default; }
+
+/* 버튼 */
+.ctrl-row { display: flex; justify-content: center; align-items: center; gap: 20px; margin-top: 18px; }
+.next-pill { display: block; width: 220px; padding: 15px 0; border: none; border-radius: 40px; background: #2554c7; color: #fff;
+  font-weight: 700; font-size: 28px; letter-spacing: 2px; cursor: pointer; text-align: center; box-sizing: border-box; }
+.next-pill:hover { background: #1c3f94; }
+.next-pill:disabled { background: #b9c7ea; cursor: not-allowed; }
+.reset-pill { padding: 13px 28px; border-radius: 40px; border: 2px solid #2554c7; background: #fff; color: #2554c7; font-weight: 700;
+  font-size: 22px; cursor: pointer; }
+.reset-pill:disabled { border-color: #c9d3ea; color: #b9c7ea; cursor: not-allowed; }
+.btn-row { text-align: center; margin-top: 22px; }
+.next-btn { display: inline-block; min-width: 260px; margin: 0 10px; padding: 16px 36px; white-space: nowrap; border-radius: 40px;
+  font-size: 30px; font-weight: 700; border: none; background: #2554c7; color: #fff; cursor: pointer; }
+.next-btn:hover { background: #1c3f94; }
+.next-btn.secondary-btn { background: #fff; color: #2554c7; border: 2px solid #2554c7; }
+.next-btn.secondary-btn:hover { background: #eaf0fd; }
+.nav-arrow-btn { width: 84px; height: 84px; border-radius: 50%; border: none; background: #2554c7; color: #fff; font-size: 32px;
+  line-height: 1; cursor: pointer; box-shadow: 0 10px 24px rgba(37,84,199,0.35); display: flex; align-items: center; justify-content: center; }
+.nav-arrow-btn:hover { background: #1c3f94; }
+.nav-arrow-btn:disabled { background: #b9c7ea; box-shadow: none; cursor: default; }
+.with-arrow { position: relative; }
+.with-arrow > .nav-arrow-btn { position: absolute; top: 50%; right: -100px; transform: translateY(-50%); }
+.mini-wrap { border: 2px solid #2554c7; border-radius: 20px; padding: 14px; background: #fff; }
+
+/* 소검사 첫 화면 — 샘플 타이틀 슬라이드 구성(배지·검사명·설명·시작하기), 그림 자리는 비워 둠 */
+.title-card { position: relative; width: 1180px; height: 820px; margin: 0 auto; background: #fff; border-radius: 22px;
+  box-shadow: 0 10px 34px rgba(30,50,100,.12); overflow: hidden; box-sizing: border-box; }
+.title-card .ellipse { position: absolute; left: -170px; top: 50px; width: 1080px; height: 720px; border-radius: 50%; background: #e7edfa; }
+.title-card .body { text-align: left; position: absolute; left: 120px; top: 0; bottom: 0; width: 880px; display: flex; flex-direction: column; justify-content: center; }
+.title-badge { align-self: flex-start; background: #fff; color: #2357e0; font-weight: 800; font-size: 24px; padding: 13px 26px; border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(35,87,224,.08); }
+.title-name { font-size: 60px; font-weight: 800; color: #1f2430; margin: 30px 0 22px; letter-spacing: -1px; }
+.title-instr { font-size: 23px; line-height: 1.75; color: #2f3747; word-break: keep-all; }
+.title-instr b { color: #1c3f94; }
+.title-notice { margin-top: 20px; font-size: 21px; line-height: 1.6; color: #1c3f94; background: rgba(255,255,255,.75); border-left: 5px solid #2554c7;
+  padding: 10px 16px; border-radius: 0 10px 10px 0; word-break: keep-all; }
+.title-start { align-self: flex-start; margin-top: 30px; display: flex; align-items: center; gap: 22px; background: #2357e0; color: #fff; border: none;
+  border-radius: 12px; padding: 14px 40px 14px 18px; font-size: 26px; font-weight: 800; cursor: pointer; }
+.title-start:hover { background: #1c47bd; }
+.title-start .play { width: 34px; height: 34px; border-radius: 50%; background: #fff; display: flex; align-items: center; justify-content: center; }
+.title-start .play::after { content: ""; border-left: 12px solid #2357e0; border-top: 8px solid transparent; border-bottom: 8px solid transparent; margin-left: 4px; }
+
+/* 전환 화면(샘플과 동일) */
+.transition-stage { position: relative; width: 760px; height: 760px; margin: 0 auto; display: flex; align-items: center; justify-content: center; }
+.transition-cloud { position: absolute; background: #aebfe6; z-index: 0; }
+.transition-cloud.c1 { width: 230px; height: 200px; top: 30px; right: 60px; border-radius: 55% 45% 50% 50% / 60% 55% 45% 40%; }
+.transition-cloud.c2 { width: 120px; height: 120px; top: 190px; right: 0; border-radius: 50%; }
+.transition-cloud.c3 { width: 230px; height: 230px; left: 0; top: 330px; border-radius: 50%; }
+.transition-circle { position: relative; z-index: 1; width: 600px; height: 600px; border-radius: 50%; background: #fff; border: 10px solid #dde6f6;
+  display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 1px #eef2fb inset; }
+.transition-text { max-width: 460px; text-align: center; font-size: 30px; line-height: 1.6; color: #3a4a66; word-break: keep-all; }
+.transition-text b { color: #26324a; }
+.transition-badge { position: absolute; z-index: 2; right: 4px; bottom: 4px; width: 130px; height: 130px; border-radius: 50%; background: #4a74c4;
+  box-shadow: 0 0 0 10px #eef3fc; display: flex; align-items: center; justify-content: center; }
+.transition-badge svg { width: 56px; height: 56px; }
+
+/* 예측추론 전제 상자 (책자 자극판과 같은 검은 테두리 상자) */
+.premise-box { background: #fff; border: 3px solid #1f2430; padding: 26px 40px; text-align: left; font-size: 27px; line-height: 1.7; color: #1f2430;
+  word-break: keep-all; box-shadow: 0 6px 24px rgba(30,50,100,.08); }
+.premise-box p { margin: 0; } .premise-box .premise-q { margin-top: 16px; font-weight: 700; }
+.premise-box.small { font-size: 22px; padding: 16px 30px; }

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+<title>예측추론 과제 - 추론능력검사</title>
+<script src="../../vendor/jspsych.js"></script>
+<script src="../../vendor/plugin-html-keyboard-response.js"></script>
+<script src="../../assets/flow.js"></script>
+<link href="../../vendor/jspsych.css" rel="stylesheet" type="text/css" />
+<link href="../../assets/engine.css" rel="stylesheet" type="text/css" />
+</head>
+<body></body>
+<script src="data.js"></script>
+<script>
+// ════════════════════════════════════════════════════════════
+// ▼ 문구 수정 구역 — source/pages/make-pages.py 에서 만든 파일입니다(고칠 때는 그 파일을 고치고 다시 생성).
+//   <br> = 줄바꿈, <b>…</b> = 굵게.  문항 그림·정답은 data.js(자동 생성)에 있습니다.
+// ════════════════════════════════════════════════════════════
+window.CFG = {
+ "id": "predictive",
+ "lang": "ko",
+ "kind": "textopts",
+ "tag": "예측추론 과제",
+ "name": "예측추론 과제",
+ "badge": "한국추론능력검사 · 보충 소검사 · 만 6~11세",
+ "instr": "지금부터 한 아이에 대한 이야기를 읽어 볼 거예요.<br>먼저 그 아이가 어떤 행동을 했는지 두 가지 이야기가 나와요.<br>이야기를 잘 읽고, 새로운 상황에서 그 아이가 어떻게 할지 생각해 보세요.<br>그 다음, <b>아래 네 가지 중에서 가장 알맞은 것</b>을 골라주세요.",
+ "prompt": "",
+ "explain": [
+  "이 아이는 친구에게 사탕을 나누어 주고, 친구가 색연필이 없으면 빌려주는 행동을 해요.<br>그래서 이 아이는 다른 사람과 물건을 나누거나 도와주는 성향이 있어요. 친구가 지우개가 없으면 <b>지우개를 빌려주거나 함께 쓰자고 할 거예요.</b>",
+  "이 아이는 친구가 넘어지면 도와주고, 무거운 가방을 들고 있으면 대신 들어줘요.<br>그래서 이 아이는 친구가 힘들어할 때 도와주는 성향이 있어요. 친구가 책을 많이 들고 힘들어하면 <b>책을 대신 들어주거나 같이 들어줄 거예요.</b>"
+ ]
+};
+</script>
+<script src="../../assets/engine.js"></script>
+</html>

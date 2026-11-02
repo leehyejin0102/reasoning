@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>검사 JSON → Excel</title>
+<style>
+:root{font-family:"Segoe UI","Malgun Gothic",sans-serif;color:#203d37;background:#f4f6f0}*{box-sizing:border-box}body{margin:0}main{max-width:820px;margin:55px auto;padding:30px}h1{font-size:32px;letter-spacing:-1px;margin:10px 0 18px}p{line-height:1.8;color:#596c64}.eyebrow{font-size:11px;letter-spacing:2px;color:#326252}.panel{background:white;border:1px solid #d9e1d6;border-radius:18px;padding:26px;margin:28px 0}input{display:block;width:100%;font:inherit;border:1px solid #bfcebd;padding:16px;border-radius:9px;margin:18px 0}button{font:inherit;background:#205b4f;color:white;border:0;border-radius:9px;padding:14px 22px;font-weight:600;cursor:pointer}button:disabled{opacity:.5;cursor:default}button:focus-visible,input:focus-visible{outline:3px solid #8fa874;outline-offset:3px}#status{white-space:pre-line;line-height:1.8;margin:22px 0}.error{color:#9c3f2e}.small{font-size:12px;color:#728075}a{color:#205b4f}li{line-height:1.9}.note{border-left:3px solid #bbd1a8;padding-left:16px;font-size:13px}footer{font-size:11px;color:#839183;margin-top:40px}
+input[type=checkbox]{display:inline-block;width:auto;margin:0 8px 0 0;padding:0}.detail-choice{display:block;margin:0 0 20px;font-size:13px;color:#536a60}</style></head><body><main><div class="eyebrow">COGNITIVE TASKS · RESULTS</div><h1>JSON 결과를 Excel로</h1><p>검사에서 저장한 결과 JSON을 선택하세요.<br>한 명의 결과를 확인하거나 여러 참가자의 자료를 한 파일로 합칠 수 있습니다.</p>
+<section class="panel"><label for="files"><strong>결과 JSON 선택</strong></label><input type="file" id="files" accept=".json,application/json" multiple><button id="convert" disabled>Excel 만들기</button><div id="status" role="status" aria-live="polite">파일을 선택해 주세요.</div><div id="warnings" class="small"></div></section>
+<ul><li><b>sessions</b>: 참가자 코드 · 세션 ID · 검사일 · 만 나이 · 검사 언어 · 검사 버전</li><li><b>trials</b>: 문항별 응답 · 정답 · 정오답 · 누락/오경보 · 점수 · 반응시간 · 검사별 기록</li></ul><p class="small">파일 개수와 관계없이 두 시트로 변환합니다. 요약 점수와 통계량은 R에서 계산하세요. trials의 참가자 코드·세션 ID로 sessions와 연결할 수 있습니다.</p><p class="note">선택한 파일은 브라우저 안에서 처리하며 서버에 전송하지 않습니다.<br>Excel에는 이름·생년월일·완료 여부를 넣지 않습니다. 연령은 검사일 기준 완료된 만 나이입니다.</p><p class="small">실시한 문항을 모두 보존합니다(중단·건너뛴 문항은 행이 없습니다). 같은 세션의 동일한 복사본은 한 번만 합칩니다. 검사 코드(task_name): picture_concepts 공통그림찾기 · problem_solving 문제해결 · raven 레이븐 추론 · verbal_cue 언어 단서 결합 · pattern 패턴 검사 · analogy A:B=C:D · rotation 3차원 회전 · picture_arrangement 차례맞추기 · dls 더비셔 · verbal_reasoning 언어적 추론 · number_series 숫자연속추론 · predictive 예측추론 · length 물리적 길이 전이.</p><footer>한국추론능력검사 · JSON 변환 도구 v1.0.0</footer></main>
+<script>/* 소검사별 결과 처리 (추론능력검사) — 소검사 페이지가 보낸 문항별 CSV 를 읽어
+   (1) 문항별 기록, (2) 요약 측정치, (3) 결과 JSON 의 한글 항목으로 바꿉니다.
+   새 소검사를 추가할 때는 아래 SPEC 에 한 항목만 추가하면 됩니다. */
+(function (root) {
+  'use strict';
+
+  // ── CSV 읽기 (따옴표·줄바꿈·BOM 처리) ─────────────────────────────
+  function parseCSV(text) {
+    const rows = []; let row = [], cell = '', q = false;
+    text = String(text || '').replace(/^﻿/, '');
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      if (q) {
+        if (c === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else q = false; } else cell += c;
+      } else if (c === '"') q = true;
+      else if (c === ',') { row.push(cell); cell = ''; }
+      else if (c === '\n' || c === '\r') {
+        if (c === '\r' && text[i + 1] === '\n') i++;
+        row.push(cell); cell = ''; if (row.some(v => v !== '')) rows.push(row); row = [];
+      } else cell += c;
+    }
+    row.push(cell); if (row.some(v => v !== '')) rows.push(row);
+    if (!rows.length) return [];
+    const head = rows[0];
+    return rows.slice(1).map(r => Object.fromEntries(head.map((h, i) => [h, r[i] === undefined ? '' : r[i]])));
+  }
+
+  // ── 값 형 변환: 'true'/'false' → 논리, 숫자 문자열 → 숫자, 빈칸 → null ──
+  const TEXT_KEYS = new Set(['code_name', 'language', 'question', 'correct_answer', 'answer_text', 'response', 'response_text',
+    'response_history', 'difficulty']);
+  function typed(key, v) {
+    if (v === '' || v === undefined || v === null) return null;
+    if (v === 'true' || v === 'TRUE') return true;
+    if (v === 'false' || v === 'FALSE') return false;
+    if (TEXT_KEYS.has(key)) return String(v);
+    if (/^-?\d+(\.\d+)?$/.test(String(v))) return Number(v);
+    return String(v);
+  }
+
+  // ── 소검사별 정의 (13개 소검사가 같은 CSV 열을 씁니다 — source/CSV_FORMAT.md) ──
+  // label: 결과 JSON 의 한글 이름, items: 문항별 상세 결과에 넣을 [CSV열, 한글 이름]
+  const ITEM = [
+    ['difficulty', '난이도'], ['question', '문항'], ['time_limit_sec', '제한시간(초)'],
+    ['correct_answer', '정답'], ['answer_text', '정답 내용'], ['response', '문항 응답'], ['response_text', '응답 내용'],
+    ['correct', '정답 여부'], ['omission', '누락오류'], ['false_alarm', '오경보오류'], ['score', '문항 점수'],
+    ['rt', '첫 반응시간'], ['decision_time', '결정시간'], ['total_rt', '총 반응시간'],
+    ['change_count', '응답 변경 횟수'], ['change_count_correct', '정반응 시 응답 변경 횟수'],
+    ['change_count_false_alarm', '오경보오류 시 응답 변경 횟수'], ['response_history', '응답 이력'],
+    ['valid_trial', '분석 포함 여부'], ['interruption_count', '화면 전환 횟수'],
+  ];
+  const spec = (code, label, extra = []) => ({ code, label, score: true, total: 20, items: [...ITEM.slice(0, 11), ...extra, ...ITEM.slice(11)] });
+  const SPEC = {
+    picture_concepts: spec('PC', '공통그림찾기'),
+    problem_solving: spec('PS', '문제해결'),
+    raven: spec('RPM', '레이븐 추론'),
+    verbal_cue: spec('VCI', '언어 단서 결합 추론 과제'),
+    pattern: spec('PAT', '패턴 검사_반복/성장'),
+    analogy: spec('ANA', 'A:B = C:D (단어유추)'),
+    rotation: spec('ROT', '3차원 회전'),
+    picture_arrangement: spec('PA', '차례맞추기'),
+    dls: spec('DLS', '더비셔 언어 체계 검사'),
+    verbal_reasoning: spec('VR', '언어적 추론'),
+    number_series: spec('NS', '숫자연속추론'),
+    predictive: spec('PI', '예측추론 과제', [['partial', '부분점수(1점) 반응']]),
+    length: spec('PT', '물리적 길이 전이 과제'),
+  };
+  const byCode = Object.fromEntries(Object.entries(SPEC).map(([id, s]) => [s.code, id]));
+
+  // ── 문항 기록 ─────────────────────────────────────────────────────
+  // 반환: 실시한 문항(administered)만, 열 이름은 CSV 와 같은 영문 키
+  function items(taskId, csv) {
+    const rows = parseCSV(csv).map(r => Object.fromEntries(Object.entries(r).map(([k, v]) => [k, typed(k, v)])));
+    // 문항 문구에 들어 있는 줄바꿈 태그(<br>)·서식 태그는 자료에서 제거
+    rows.forEach(r => { if (typeof r.question === 'string') r.question = r.question.replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim(); });
+    return rows.filter(r => r.administered !== false).map(r => ({ ...r, item_index: r.item_index }));
+  }
+  function totalItems(taskId, csv) {
+    const rows = parseCSV(csv);
+    return rows.length && 'administered' in rows[0] ? rows.length : (SPEC[taskId].total || rows.length);
+  }
+
+  const num = v => typeof v === 'number' && Number.isFinite(v);
+  function mean(list) {
+    const v = list.filter(num);
+    return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null;
+  }
+  const sum = list => list.filter(num).reduce((a, b) => a + b, 0);
+  const round = (v, d = 3) => (num(v) ? Number(v.toFixed(d)) : null);
+
+  // ── 요약 측정치 (영문 키; 한글 이름은 SUMMARY_LABELS) ───────────────
+  // 화면 전환 등으로 제외(valid_trial=false)된 문항은 요약 계산에서 빼고, 개수만 n_invalid 로 남깁니다.
+  function summary(taskId, all, total) {
+    const spec = SPEC[taskId], list = all.filter(r => r.valid_trial !== false), n = list.length;
+    const correct = list.filter(r => r.correct === true).length;
+    const omission = list.filter(r => r.omission === true).length;
+    const falseAlarm = list.filter(r => r.false_alarm === true).length;
+    const out = {
+      n_trials: all.length, n_valid: n, n_invalid: all.length - n, n_items_total: total, n_correct: correct,
+      n_failures: omission + falseAlarm, n_omissions: omission, n_false_alarms: falseAlarm,
+      total_score: spec.score ? sum(list.map(r => r.score)) : correct,
+      accuracy: n ? round(correct / n, 6) : null,
+      rt_n: list.filter(r => num(r.rt)).length,
+      rt_mean: round(mean(list.map(r => r.rt))),
+      decision_time_mean: round(mean(list.map(r => r.decision_time))),
+      total_rt_mean: round(mean(list.map(r => r.total_rt))),
+    };
+    out.change_count_correct_total = sum(list.map(r => r.change_count_correct));
+    out.change_count_false_alarm_total = sum(list.map(r => r.change_count_false_alarm));
+    out.stopped_by_rule = total > all.length ? true : false;
+    if (taskId === 'predictive') out.n_partial = list.filter(r => r.partial === true).length;
+    return out;
+  }
+  const SUMMARY_LABELS = {
+    n_trials: '본시행 수', n_valid: '유효 시행 수', n_invalid: '제외 시행 수', n_items_total: '전체 문항 수', n_correct: '정반응 수', n_failures: '실패 횟수',
+    n_omissions: '누락오류 수', n_false_alarms: '오경보오류 수', total_score: '총점', accuracy: '정확도',
+    rt_n: '반응시간 수', rt_mean: '평균 첫 반응시간', decision_time_mean: '평균 결정시간', total_rt_mean: '평균 총 반응시간',
+    change_count_correct_total: '정반응 시 응답 변경 횟수 합계', change_count_false_alarm_total: '오경보오류 시 응답 변경 횟수 합계',
+    stopped_by_rule: '중지 규칙 적용 여부', n_partial: '부분점수(1점) 반응 수',
+  };
+  function koSummary(s) {
+    return Object.fromEntries(Object.entries(s).filter(([k]) => SUMMARY_LABELS[k]).map(([k, v]) => [SUMMARY_LABELS[k], v]));
+  }
+
+  // 결과 JSON 의 문항 한 줄 (한글 이름)
+  function koItem(taskId, r, index) {
+    const spec = SPEC[taskId];
+    const out = { '문항 아이디': spec.code + '_' + String(index + 1).padStart(3, '0'), '문항 번호': r.item_index ?? index + 1 };
+    for (const [key, label] of spec.items) out[label] = r[key] === undefined ? null : r[key];
+    return out;
+  }
+
+  const api = { SPEC, byCode, parseCSV, typed, items, totalItems, summary, koSummary, koItem, SUMMARY_LABELS, mean, round };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.BatteryTasks = api;
+})(typeof globalThis !== 'undefined' ? globalThis : this);
+</script>
+<script>(function(root){
+'use strict';
+const DATE=/^(\d{4})-(\d{2})-(\d{2})$/;
+function parseDate(value){
+ const m=DATE.exec(String(value||''));if(!m)return null;
+ const y=+m[1],month=+m[2],day=+m[3],ms=Date.UTC(y,month-1,day),date=new Date(ms);
+ return date.getUTCFullYear()===y&&date.getUTCMonth()===month-1&&date.getUTCDate()===day?{year:y,month,day,ms}:null;
+}
+function testDate(iso){const ms=Date.parse(iso);return Number.isFinite(ms)?new Date(ms+9*3600000).toISOString().slice(0,10):null;}
+function age(birthDate,date){
+ const b=parseDate(birthDate),t=parseDate(date);if(!b||!t||b.ms>t.ms)return null;
+ const before=t.month<b.month||t.month===b.month&&t.day<b.day;
+ return {age_years:t.year-b.year-(before?1:0),age_months:(t.year-b.year)*12+t.month-b.month-(t.day<b.day?1:0),age_days:(t.ms-b.ms)/86400000};
+}
+function validate(input,date){
+ const participant_id=String(input.participant_id||'').trim(),participant_name=String(input.participant_name||'').trim(),birth_date=String(input.birth_date||'').trim();
+ if(!/^[A-Za-z0-9_-]{1,40}$/.test(participant_id))return {error:'codeError'};
+ if(participant_name.length>80||/[\u0000-\u001f\u007f]/.test(participant_name))return {error:'nameError'};
+ const b=parseDate(birth_date);if(!b||b.year<1900)return {error:'birthDateError'};
+ const ages=age(birth_date,date);if(!ages)return {error:'birthDateFuture'};
+ return {participant_id,participant_name:participant_name||null,birth_date,test_date:date,...ages};
+}
+function fromSession(data){
+ const test_date=data.test_date||testDate(data.started_at),ages=data.birth_date?age(data.birth_date,test_date):null;
+ return {test_date,age_years:ages?.age_years??data.age_years??null,age_months:ages?.age_months??data.age_months??null,age_days:ages?.age_days??data.age_days??null};
+}
+const api={parseDate,testDate,age,validate,fromSession};
+if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.BatteryParticipant=api;
+})(typeof globalThis!=='undefined'?globalThis:this);
+</script>
+<script>/* 분석용 자료(analysis) 구성 — 결과 JSON 안의 analysis 항목과 엑셀(sessions·trials)의 기준입니다. */
+(function (root) {
+  'use strict';
+  const node = typeof module !== 'undefined' && module.exports;
+  const T = node ? require('./tasks.js') : root.BatteryTasks;
+  const I = node ? require('./participant.js') : root.BatteryParticipant;
+  const schema = '2.0';
+
+  const rtDefinitions = {
+    unit: 'ms',
+    rt: '문항(그림)이 제시된 후 첫 응답(첫 터치)까지의 시간',
+    decision_time: '첫 응답 후 "다음" 버튼을 누르기까지의 시간 (제한시간이 지나 자동으로 넘어간 경우 제한시간 종료까지)',
+    valid_trial: '문항 진행 중 화면 전환·창 이탈·창 크기 변경이 없었으면 true. false 이면 요약 계산에서 제외(행은 남김)',
+    total_rt: 'rt + decision_time',
+  };
+  const trialCommon = ['task_name', 'item_index', 'response', 'correct_answer', 'correct', 'omission', 'false_alarm', 'score', 'rt', 'decision_time', 'total_rt'];
+  const trialSpecific = ['difficulty', 'question', 'time_limit_sec', 'answer_text', 'response_text', 'partial', 'change_count', 'change_count_correct',
+    'change_count_false_alarm', 'response_history', 'valid_trial', 'interruption_count'];
+  const summaryKeys = Object.keys(T.SUMMARY_LABELS);
+
+  const sessionId = d => { const id = String(d.session_id || ''); return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id) ? id.replace(/-/g, '').slice(0, 12) : id; };
+  function common(d) {
+    const a = I.fromSession(d);
+    return { analysis_schema_version: schema, participant_id: d.participant_id, session_id: sessionId(d), data_role: d.data_role || 'research',
+      test_date: a.test_date, age_years: a.age_years, age_months: a.age_months, age_days: a.age_days,
+      test_timezone: 'Asia/Seoul', language: d.language || null, version: d.version || null, session_complete: d.session_complete === true };
+  }
+  // 진행된 소검사(폴더 이름) 목록, 선택 순서대로
+  const doneTasks = d => (d.selected || Object.keys(d.task_data || {})).filter(id => d.task_data && d.task_data[id] && T.SPEC[id]);
+
+  function taskPacket(d, id) {
+    const td = d.task_data[id], list = T.items(id, td.csv), s = T.summary(id, list, T.totalItems(id, td.csv));
+    const pick = r => Object.fromEntries([...trialCommon, ...trialSpecific].map(k => [k, k === 'task_name' ? id : (r[k] ?? null)]));
+    if (td.completed === false) s.stopped_by_rule = false;   // 검사 중단(연구자)으로 끝난 경우는 중지 규칙이 아님
+    return { id, list, summary: { task_name: id, summary_scope: 'task', condition: 'overall', task_complete: td.completed !== false, ...s }, trials: list.map(pick) };
+  }
+  function packet(d) {
+    const parts = doneTasks(d).map(id => taskPacket(d, id));
+    return {
+      schema_version: schema,
+      rt_definitions: rtDefinitions,
+      session: { ...common(d), participant_name: d.participant_name || null, birth_date: d.birth_date || null,
+        started_at: d.started_at || null, completed_at: d.completed_at || null, selected_tasks: parts.map(p => p.id) },
+      summary: parts.map(p => p.summary),
+      summary_details: [],
+      trials: parts.flatMap(p => p.trials),
+    };
+  }
+  const numericFields = ['item_index', 'score', 'rt', 'decision_time', 'total_rt', 'time_limit_sec', 'change_count', 'change_count_correct',
+    'change_count_false_alarm', 'interruption_count', ...summaryKeys.filter(k => !['task_complete', 'stopped_by_rule'].includes(k))];
+  const booleanFields = ['correct', 'omission', 'false_alarm', 'partial', 'valid_trial', 'task_complete', 'stopped_by_rule'];
+  const api = { schema, rtDefinitions, trialCommon, trialSpecific, summaryKeys, numericFields, booleanFields, sessionId, common, doneTasks, taskPacket, packet };
+  if (node) module.exports = api; else root.BatteryAnalysis = api;
+})(typeof globalThis !== 'undefined' ? globalThis : this);
+</script>
+<script>(function(root){
+'use strict';
+const encoder=new TextEncoder(),ns='http://schemas.openxmlformats.org/spreadsheetml/2006/main';
+function xml(value){return String(value).replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\ufffe\uffff]/g,'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));}
+function column(index){let name='';for(let n=index+1;n;n=Math.floor((n-1)/26))name=String.fromCharCode(65+(n-1)%26)+name;return name;}
+function cell(value,row,col,header=false,styleId=null){
+ const ref=column(col)+row,index=styleId??(header?1:0),style=index?' s="'+index+'"':'';
+ if(value===null||value===undefined||typeof value==='number'&&!Number.isFinite(value))return '<c r="'+ref+'"'+style+'/>';
+ if(typeof value==='number')return '<c r="'+ref+'"'+style+'><v>'+value+'</v></c>';
+ if(typeof value==='boolean')return '<c r="'+ref+'"'+style+' t="b"><v>'+(value?1:0)+'</v></c>';
+ const text=typeof value==='object'?JSON.stringify(value):String(value);
+ return '<c r="'+ref+'"'+style+' t="inlineStr"><is><t xml:space="preserve">'+xml(text)+'</t></is></c>';
+}
+function worksheet(sheet){
+ const columns=sheet.columns||Array.from(new Set(sheet.rows.flatMap(r=>Object.keys(r)))),end=column(Math.max(0,columns.length-1))+(sheet.rows.length+1);
+ const header='<row r="1" ht="30" customHeight="1">'+columns.map((v,i)=>cell(v,1,i,true)).join('')+'</row>';
+ const rows=sheet.rows.map((r,i)=>'<row r="'+(i+2)+'">'+columns.map((key,j)=>cell(r[key],i+2,j)).join('')+'</row>').join('');
+ const freeze=sheet.freeze||{rows:1,cols:0},fr=freeze.rows??1,fc=freeze.cols??0;
+ const pane='<pane '+(fc?'xSplit="'+fc+'" ':'')+(fr?'ySplit="'+fr+'" ':'')+'topLeftCell="'+column(fc)+(fr+1)+'" activePane="'+(fc&&fr?'bottomRight':fc?'topRight':'bottomLeft')+'" state="frozen"/>';
+ const widths=columns.map((key,i)=>'<col min="'+(i+1)+'" max="'+(i+1)+'" width="'+(key==='measure'?43:key.includes('sequence')?30:key==='condition'?30:key==='summary_scope'?24:key==='error_type'?28:19)+'" customWidth="1"/>').join('');
+ return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="'+ns+'"><dimension ref="A1:'+end+'"/><sheetViews><sheetView workbookViewId="0">'+pane+'</sheetView></sheetViews><sheetFormatPr defaultRowHeight="18"/><cols>'+widths+'</cols><sheetData>'+header+rows+'</sheetData><autoFilter ref="A1:'+end+'"/></worksheet>';
+}
+const crcTable=Array.from({length:256},(_,i)=>{let c=i;for(let j=0;j<8;j++)c=c&1?0xedb88320^(c>>>1):c>>>1;return c>>>0;});
+function crc32(bytes){let c=0xffffffff;for(const b of bytes)c=crcTable[(c^b)&255]^(c>>>8);return (c^0xffffffff)>>>0;}
+function zip(entries){
+ const prepared=entries.map(([name,text])=>({name:encoder.encode(name),bytes:encoder.encode(text)}));
+ const length=prepared.reduce((sum,e)=>sum+30+e.name.length+e.bytes.length+46+e.name.length,22),bytes=new Uint8Array(length),view=new DataView(bytes.buffer),central=[];
+ let offset=0;const u16=(at,v)=>view.setUint16(at,v,true),u32=(at,v)=>view.setUint32(at,v,true);
+ for(const e of prepared){const start=offset,crc=crc32(e.bytes);u32(offset,0x04034b50);u16(offset+4,20);u16(offset+6,0x0800);u16(offset+8,0);u16(offset+10,0);u16(offset+12,33);u32(offset+14,crc);u32(offset+18,e.bytes.length);u32(offset+22,e.bytes.length);u16(offset+26,e.name.length);u16(offset+28,0);bytes.set(e.name,offset+30);bytes.set(e.bytes,offset+30+e.name.length);offset+=30+e.name.length+e.bytes.length;central.push({...e,start,crc});}
+ const centralStart=offset;
+ for(const e of central){u32(offset,0x02014b50);u16(offset+4,20);u16(offset+6,20);u16(offset+8,0x0800);u16(offset+10,0);u16(offset+12,0);u16(offset+14,33);u32(offset+16,e.crc);u32(offset+20,e.bytes.length);u32(offset+24,e.bytes.length);u16(offset+28,e.name.length);u16(offset+30,0);u16(offset+32,0);u16(offset+34,0);u16(offset+36,0);u32(offset+38,0);u32(offset+42,e.start);bytes.set(e.name,offset+46);offset+=46+e.name.length;}
+ const centralLength=offset-centralStart;u32(offset,0x06054b50);u16(offset+4,0);u16(offset+6,0);u16(offset+8,central.length);u16(offset+10,central.length);u32(offset+12,centralLength);u32(offset+16,centralStart);u16(offset+20,0);
+ return bytes;
+}
+function workbookEntries(sheets){
+ if(!sheets.length||sheets.some(s=>!s.name||s.name.length>31||/[\\/?*[\]:]/.test(s.name))||new Set(sheets.map(s=>s.name.toLowerCase())).size!==sheets.length)throw Error('Invalid worksheet names');
+ const rel='http://schemas.openxmlformats.org/officeDocument/2006/relationships',types='http://schemas.openxmlformats.org/package/2006/content-types';
+ const entries=[
+ ['[Content_Types].xml','<?xml version="1.0" encoding="UTF-8"?><Types xmlns="'+types+'"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>'+sheets.map((_,i)=>'<Override PartName="/xl/worksheets/sheet'+(i+1)+'.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>').join('')+'</Types>'],
+ ['_rels/.rels','<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="'+rel+'/officeDocument" Target="xl/workbook.xml"/></Relationships>'],
+ ['xl/workbook.xml','<?xml version="1.0" encoding="UTF-8"?><workbook xmlns="'+ns+'" xmlns:r="'+rel+'"><bookViews><workbookView/></bookViews><sheets>'+sheets.map((s,i)=>'<sheet name="'+xml(s.name)+'" sheetId="'+(i+1)+'" r:id="rId'+(i+1)+'"/>').join('')+'</sheets></workbook>'],
+ ['xl/_rels/workbook.xml.rels','<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+sheets.map((_,i)=>'<Relationship Id="rId'+(i+1)+'" Type="'+rel+'/worksheet" Target="worksheets/sheet'+(i+1)+'.xml"/>').join('')+'<Relationship Id="rIdStyles" Type="'+rel+'/styles" Target="styles.xml"/></Relationships>'],
+ ['xl/styles.xml','<?xml version="1.0" encoding="UTF-8"?><styleSheet xmlns="'+ns+'"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFEEEEEE"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>']
+ ];
+ sheets.forEach((s,i)=>entries.push(['xl/worksheets/sheet'+(i+1)+'.xml',s.grid?richWorksheet(s):worksheet(s)]));return entries;
+}
+function richId(c){
+ const ids={title:2,meta:3,note:4,warning:5,section:6,sectionTeal:7,header:8,text:9,label:10,n:15,missing:16,good:17,bad:18,excluded:19,center:20};
+ return c.s==='value'?({integer:11,decimal:12,precise:13,percent:14}[c.fmt]||13):(ids[c.s]??9);
+}
+function richStyles(){
+ const f=(size,color,bold=false)=>'<font>'+(bold?'<b/>':'')+'<sz val="'+size+'"/><color rgb="'+color+'"/><name val="Malgun Gothic"/></font>';
+ const fonts=[f(10,'FF203247'),f(10,'FF203247',true),f(10,'FFFFFFFF',true),f(16,'FF142D4E',true),f(9,'FF64748B'),f(10,'FF166534'),f(10,'FF991B1B'),f(10,'FF92400E'),f(10,'FF203247',true)];
+ const fills=['<fill><patternFill patternType="none"/></fill>','<fill><patternFill patternType="gray125"/></fill>',...['FFEEEEEE','FFEDF3F9','FFFFF4DC','FF18334E','FF116D77','FFF5F7FA','FFE8F5EC','FFFDECEC'].map(c=>'<fill><patternFill patternType="solid"><fgColor rgb="'+c+'"/><bgColor indexed="64"/></patternFill></fill>')];
+ const xfs=[[0,0,0,0,'left'],[1,2,0,0,'left'],[3,0,0,0,'left'],[4,0,0,0,'left'],[4,3,0,0,'left'],[7,4,0,0,'left'],[2,5,0,0,'left'],[2,6,0,0,'left'],[2,5,0,0,'center'],[0,0,1,0,'left'],[8,3,1,0,'left'],[0,0,1,1,'right'],[0,0,1,164,'right'],[0,0,1,165,'right'],[0,0,1,166,'right'],[4,7,1,1,'center'],[4,0,1,0,'center'],[5,8,1,0,'center'],[6,9,1,0,'center'],[4,7,1,0,'center'],[0,0,1,0,'center']];
+ return '<?xml version="1.0" encoding="UTF-8"?><styleSheet xmlns="'+ns+'"><numFmts count="3"><numFmt numFmtId="164" formatCode="0.0"/><numFmt numFmtId="165" formatCode="0.000"/><numFmt numFmtId="166" formatCode="0.0%"/></numFmts><fonts count="'+fonts.length+'">'+fonts.join('')+'</fonts><fills count="'+fills.length+'">'+fills.join('')+'</fills><borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border><left/><right/><top/><bottom style="hair"><color rgb="FFD8E0EA"/></bottom><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="'+xfs.length+'">'+xfs.map(([font,fill,border,num,align])=>'<xf numFmtId="'+num+'" fontId="'+font+'" fillId="'+fill+'" borderId="'+border+'" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="'+align+'" vertical="center" wrapText="1"/></xf>').join('')+'</cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>';
+}
+function richWorksheet(s){
+ const rel='http://schemas.openxmlformats.org/officeDocument/2006/relationships',freeze=s.freeze||{rows:4,cols:0},top=column(freeze.cols||0)+((freeze.rows||0)+1),pane=freeze.cols&&freeze.rows?'bottomRight':freeze.cols?'topRight':'bottomLeft';
+ const view='<sheetViews><sheetView workbookViewId="0" showGridLines="0" zoomScale="'+(s.zoom||85)+'"><pane '+(freeze.cols?'xSplit="'+freeze.cols+'" ':'')+(freeze.rows?'ySplit="'+freeze.rows+'" ':'')+'topLeftCell="'+top+'" activePane="'+pane+'" state="frozen"/><selection pane="'+pane+'" activeCell="'+top+'" sqref="'+top+'"/></sheetView></sheetViews>';
+ const widths=s.widths.map((w,i)=>'<col min="'+(i+1)+'" max="'+(i+1)+'" width="'+w+'" customWidth="1"/>').join('');
+ const rows=s.grid.map((r,i)=>'<row r="'+(i+1)+'" ht="'+(r.height||28)+'" customHeight="1">'+r.cells.map((c,j)=>{const spec=c&&typeof c==='object'&&Object.prototype.hasOwnProperty.call(c,'v')?c:{v:c,s:'text'};return cell(spec.v,i+1,j,false,richId(spec));}).join('')+'</row>').join('');
+ const merges=s.merges.length?'<mergeCells count="'+s.merges.length+'">'+s.merges.map(ref=>'<mergeCell ref="'+xml(ref)+'"/>').join('')+'</mergeCells>':'';
+ const tables=s.tables.length?'<tableParts count="'+s.tables.length+'">'+s.tables.map((_,i)=>'<tablePart r:id="rIdT'+(i+1)+'"/>').join('')+'</tableParts>':'';
+ return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="'+ns+'" xmlns:r="'+rel+'"><sheetPr><tabColor rgb="'+(s.tabColor||'FF18334E')+'"/><pageSetUpPr fitToPage="1"/></sheetPr><dimension ref="A1:'+column(s.widths.length-1)+s.grid.length+'"/>'+view+'<sheetFormatPr defaultRowHeight="28"/><cols>'+widths+'</cols><sheetData>'+rows+'</sheetData>'+merges+'<printOptions horizontalCentered="1"/><pageMargins left="0.25" right="0.25" top="0.4" bottom="0.4" header="0.2" footer="0.2"/><pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="0"/>'+tables+'</worksheet>';
+}
+function richTable(t,id){
+ if(new Set(t.columns).size!==t.columns.length)throw Error('Duplicate table headers');
+ return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><table xmlns="'+ns+'" id="'+id+'" name="'+xml(t.name)+'" displayName="'+xml(t.name)+'" ref="'+xml(t.ref)+'" totalsRowShown="0"><autoFilter ref="'+xml(t.ref)+'"/><tableColumns count="'+t.columns.length+'">'+t.columns.map((name,i)=>'<tableColumn id="'+(i+1)+'" name="'+xml(name).replace(/\n/g,'&#10;')+'"/>').join('')+'</tableColumns><tableStyleInfo name="TableStyleLight9" showFirstColumn="0" showLastColumn="0" showRowStripes="1" showColumnStripes="0"/></table>';
+}
+function workbook(sheets){
+ const entries=workbookEntries(sheets);
+ if(sheets.some(s=>s.grid))entries.find(e=>e[0]==='xl/styles.xml')[1]=richStyles();
+ const rel='http://schemas.openxmlformats.org/officeDocument/2006/relationships',types=[];let id=0;
+ sheets.forEach((s,i)=>{
+  if(!s.tables?.length)return;
+  const relationships=s.tables.map((t,j)=>{id++;entries.push(['xl/tables/table'+id+'.xml',richTable(t,id)]);types.push('<Override PartName="/xl/tables/table'+id+'.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.table+xml"/>');return '<Relationship Id="rIdT'+(j+1)+'" Type="'+rel+'/table" Target="../tables/table'+id+'.xml"/>';});
+  entries.push(['xl/worksheets/_rels/sheet'+(i+1)+'.xml.rels','<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+relationships.join('')+'</Relationships>']);
+ });
+ entries[0][1]=entries[0][1].replace('</Types>',types.join('')+'</Types>');
+ return zip(entries);
+}
+
+function base64(bytes){const chars='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';let out='';for(let i=0;i<bytes.length;i+=3){const a=bytes[i],b=bytes[i+1],c=bytes[i+2],n=(a<<16)|((b||0)<<8)|(c||0);out+=chars[(n>>>18)&63]+chars[(n>>>12)&63]+(i+1<bytes.length?chars[(n>>>6)&63]:'=')+(i+2<bytes.length?chars[n&63]:'=');}return out;}
+const api={workbook,base64};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.BatteryWorkbook=api;
+})(typeof globalThis!=='undefined'?globalThis:this);
+
+</script>
+<script>/* 엑셀 시트 정의 — sessions(참가자·세션) + trials(문항별 기록) 두 시트 */
+(function (root) {
+  'use strict';
+  const node = typeof module !== 'undefined' && module.exports, A = node ? require('./analysis.js') : root.BatteryAnalysis;
+  const sessionColumns = ['participant_id', 'session_id', 'test_date', 'age_years', 'language', 'version'];
+  const trialColumns = ['participant_id', 'session_id', ...A.trialCommon, ...A.trialSpecific];
+  const pick = (columns, r) => Object.fromEntries(columns.map(k => [k, r[k] ?? null]));
+  const sessionRow = session => pick(sessionColumns, { ...session, ...A.common(session) });
+  function sheets(packets) {
+    return [
+      { name: 'sessions', columns: sessionColumns, rows: packets.map(p => sessionRow(p.session)), freeze: { rows: 1, cols: 1 } },
+      { name: 'trials', columns: trialColumns, rows: packets.flatMap(p => { const s = sessionRow(p.session); return p.trials.map(r => pick(trialColumns, { ...r, participant_id: s.participant_id, session_id: s.session_id })); }), freeze: { rows: 1, cols: 2 } },
+    ];
+  }
+  const api = { sessionColumns, trialColumns, sessionRow, sheets };
+  if (node) module.exports = api; else root.BatteryDataTables = api;
+})(typeof globalThis !== 'undefined' ? globalThis : this);
+</script>
+<script>/* 결과 JSON → 엑셀 변환 (json_to_excel.html 에서 사용) */
+(function (root) {
+  'use strict';
+  const node = typeof module !== 'undefined' && module.exports;
+  const T = node ? require('./tasks.js') : root.BatteryTasks, A = node ? require('./analysis.js') : root.BatteryAnalysis,
+    D = node ? require('./data-tables.js') : root.BatteryDataTables, W = node ? require('./workbook.js') : root.BatteryWorkbook;
+  const object = v => !!v && typeof v === 'object' && !Array.isArray(v);
+  function reportRecords(doc) {
+    if (!object(doc.result)) throw Error('result 항목이 있는 검사 결과 JSON을 선택해 주세요.');
+    const out = [];
+    for (const [date, byTask] of Object.entries(doc.result)) {
+      if (!object(byTask)) throw Error('검사일 아래의 검사 구조가 올바르지 않습니다.');
+      for (const [code, arr] of Object.entries(byTask)) {
+        if (!T.byCode[code] || !Array.isArray(arr) || arr.length !== 1 || !object(arr[0])) throw Error('지원하지 않는 검사 결과 구조: ' + code);
+        out.push({ date, task: T.byCode[code], value: arr[0] });
+      }
+    }
+    return out;
+  }
+  function validate(p, reports) {
+    if (p.schema_version !== '2.0' || !object(p.session) || !Array.isArray(p.summary) || !Array.isArray(p.trials)) throw Error('지원하지 않는 analysis 구조 버전입니다.');
+    const s = p.session;
+    for (const k of ['age_years', 'age_months', 'age_days']) if (s[k] != null && !Number.isFinite(s[k])) throw Error('연령 자료형 오류: ' + k);
+    if (typeof s.participant_id !== 'string' || !s.participant_id) throw Error('참가자 코드가 없습니다.');
+    for (const r of [...p.summary, ...p.trials]) {
+      if (!T.SPEC[r.task_name]) throw Error('알 수 없는 검사 코드: ' + r.task_name);
+      for (const [k, v] of Object.entries(r)) {
+        if (A.numericFields.includes(k) && v !== null && !Number.isFinite(v)) throw Error('숫자 자료형 오류: ' + k);
+        if (A.booleanFields.includes(k) && v !== null && typeof v !== 'boolean') throw Error('논리 자료형 오류: ' + k);
+      }
+    }
+    for (const t of new Set(p.trials.map(r => r.task_name))) if (!reports.some(r => r.task === t)) throw Error('analysis에만 존재하는 검사가 있습니다.');
+    for (const { task, value } of reports) {
+      if (value['참가자 번호'] !== s.participant_id || value['세션 아이디'] !== s.session_id) throw Error('result와 analysis의 참가자·세션 정보가 다릅니다.');
+      if (value['본시행 수'] !== p.trials.filter(r => r.task_name === task).length) throw Error('result와 analysis의 본시행 수가 다릅니다.');
+    }
+    return p;
+  }
+  function decode(input) {
+    const doc = typeof input === 'string' ? JSON.parse(input.replace(/^﻿/, '')) : input;
+    if (!object(doc)) throw Error('JSON 객체가 아닙니다.');
+    const reports = reportRecords(doc);
+    if (!doc.analysis) throw Error('analysis 항목이 없는 파일입니다. 이 앱이 저장한 결과 JSON을 선택해 주세요.');
+    return validate({ ...doc.analysis, warnings: [] }, reports);
+  }
+  const canonical = v => Array.isArray(v) ? v.map(canonical) : object(v) ? Object.fromEntries(Object.keys(v).sort().map(k => [k, canonical(v[k])])) : v;
+  function convert(inputs) {
+    if (!Array.isArray(inputs) || !inputs.length) throw Error('JSON 파일을 선택해 주세요.');
+    const unique = new Map(), packets = [], warnings = []; let duplicates = 0;
+    for (const input of inputs) {
+      const p = decode(input.document ?? input), key = p.session.participant_id + '|' + p.session.session_id;
+      const fp = JSON.stringify(canonical({ session: p.session, summary: p.summary, trials: p.trials }));
+      if (unique.has(key)) { if (unique.get(key) !== fp) throw Error('같은 참가자·세션의 값이 다른 파일이 있습니다. 확인 후 하나를 선택해 주세요.'); duplicates++; continue; }
+      unique.set(key, fp); packets.push(p);
+      const label = p.session.participant_id + ' / ' + p.session.session_id;
+      if (p.session.session_complete === false) warnings.push(label + ': 미완료 세션입니다.');
+      for (const s of p.summary) if (s.task_complete === false) warnings.push(label + ': ' + s.task_name + ' 검사가 중단되었습니다.');
+    }
+    const sheets = D.sheets(packets);
+    return { bytes: W.workbook(sheets), sheets, packets, duplicates, warnings: [...new Set(warnings)], sessionCount: packets.length, trialCount: packets.reduce((n, p) => n + p.trials.length, 0) };
+  }
+  const api = { decode, convert };
+  if (node) module.exports = api; else root.BatteryConvert = api;
+})(typeof globalThis !== 'undefined' ? globalThis : this);
+</script>
+<script>
+'use strict';
+const input=document.getElementById('files'),button=document.getElementById('convert'),status=document.getElementById('status'),warnings=document.getElementById('warnings');
+input.onchange=()=>{button.disabled=!input.files.length;status.className='';status.textContent=input.files.length+'개 파일을 선택했습니다.';warnings.textContent='';};
+button.onclick=async()=>{
+ const selected=[...input.files];if(!selected.length)return;button.disabled=true;status.className='';status.textContent='파일을 읽고 있습니다…';warnings.textContent='';
+ try{
+  const documents=[];for(const file of selected){try{documents.push({document:JSON.parse((await file.text()).replace(/^\uFEFF/,''))});}catch{throw Error(file.name+': JSON 파일을 읽을 수 없습니다.');}}
+  const result=BatteryConvert.convert(documents),blob=new Blob([result.bytes],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;const base=selected.length===1?selected[0].name.replace(/\.json$/i,''):'combined_'+new Date().toISOString().slice(0,10);a.download=base+'.xlsx';a.click();setTimeout(()=>URL.revokeObjectURL(url),2000);
+  status.textContent=result.sessionCount+'개 세션 · '+result.trialCount+'개 문항 기록을 변환했습니다.\nExcel 파일 다운로드를 확인해 주세요.'+(result.duplicates?'\n동일한 복사본 '+result.duplicates+'개는 중복 제외했습니다.':'');
+  warnings.textContent=result.warnings.join('\n');
+ }catch(error){status.className='error';status.textContent=error.message||String(error);}
+ finally{button.disabled=!input.files.length;}
+};
+</script></body></html>

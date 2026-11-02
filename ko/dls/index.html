@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+<title>더비셔 언어 체계 검사 - 추론능력검사</title>
+<script src="../../vendor/jspsych.js"></script>
+<script src="../../vendor/plugin-html-keyboard-response.js"></script>
+<script src="../../assets/flow.js"></script>
+<link href="../../vendor/jspsych.css" rel="stylesheet" type="text/css" />
+<link href="../../assets/engine.css" rel="stylesheet" type="text/css" />
+</head>
+<body></body>
+<script src="data.js"></script>
+<script>
+// ════════════════════════════════════════════════════════════
+// ▼ 문구 수정 구역 — source/pages/make-pages.py 에서 만든 파일입니다(고칠 때는 그 파일을 고치고 다시 생성).
+//   <br> = 줄바꿈, <b>…</b> = 굵게.  문항 그림·정답은 data.js(자동 생성)에 있습니다.
+// ════════════════════════════════════════════════════════════
+window.CFG = {
+ "id": "dls",
+ "lang": "ko",
+ "kind": "choice",
+ "tag": "더비셔 언어 체계 검사",
+ "name": "더비셔 언어 체계 검사",
+ "badge": "한국추론능력검사 · 보충 소검사 · 만 2~5세",
+ "instr": "지금부터 그림을 보면서 질문에 답해 볼 거예요.<br>그림 아래에 있는 <b>질문</b>을 잘 보고,<br>맞는 그림을 손가락으로 <b>눌러</b> 주세요.",
+ "prompt": "",
+ "explain": [
+  "그림을 보면 공, 블록, 곰 인형, 의자가 있어요.<br>질문은 ‘공을 눌러 주세요’이므로, <b>공</b>을 찾아서 누르면 돼요.",
+  "그림을 보면 사과, 컵, 모자, 자동차가 있어요.<br>질문은 ‘자동차를 눌러 주세요’이므로, <b>자동차</b>를 찾아서 누르면 돼요."
+ ]
+};
+</script>
+<script src="../../assets/engine.js"></script>
+</html>

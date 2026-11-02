@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+<title>물리적 길이 전이 과제 - 추론능력검사</title>
+<script src="../../vendor/jspsych.js"></script>
+<script src="../../vendor/plugin-html-keyboard-response.js"></script>
+<script src="../../assets/flow.js"></script>
+<link href="../../vendor/jspsych.css" rel="stylesheet" type="text/css" />
+<link href="../../assets/engine.css" rel="stylesheet" type="text/css" />
+</head>
+<body></body>
+<script src="data.js"></script>
+<script>
+// ════════════════════════════════════════════════════════════
+// ▼ 문구 수정 구역 — source/pages/make-pages.py 에서 만든 파일입니다(고칠 때는 그 파일을 고치고 다시 생성).
+//   <br> = 줄바꿈, <b>…</b> = 굵게.  문항 그림·정답은 data.js(자동 생성)에 있습니다.
+// ════════════════════════════════════════════════════════════
+window.CFG = {
+ "id": "length",
+ "lang": "ko",
+ "kind": "length",
+ "tag": "물리적 길이 전이 과제",
+ "name": "물리적 길이 전이 과제",
+ "badge": "한국추론능력검사 · 보충 소검사 · 만 6~11세",
+ "instr": "지금부터 여러 사물 그림을 보면서 문제를 풀 거예요.<br>각 그림에서 어떤 물건이 더 긴지 잘 살펴보세요.<br>그림들 사이의 관계를 바탕으로, 직접 비교되지 않은 사물들도 판단해야 합니다.<br>전체 그림을 보고, 질문에 맞는 사물을 <b>위 그림 속에서 직접 눌러</b> 골라주세요.",
+ "prompt": "질문에 맞는 사물을 <b>그림 속에서</b> 눌러 주세요.",
+ "explain": [
+  "지우개는 연필보다 짧고, 연필은 자보다 짧아요. 두 관계를 이어서 생각하면 지우개 &lt; 연필 &lt; 자 순서예요.<br>그래서 지우개와 자를 비교하면 <b>자</b>가 더 길어요.",
+  "2층버스는 스쿨버스보다 짧고, 스쿨버스는 고속버스보다 짧아요. 두 관계를 이어서 생각하면 2층버스 &lt; 스쿨버스 &lt; 고속버스 순서예요.<br>그래서 2층버스와 고속버스를 비교하면 <b>고속버스</b>가 더 길어요."
+ ]
+};
+</script>
+<script src="../../assets/engine.js"></script>
+</html>

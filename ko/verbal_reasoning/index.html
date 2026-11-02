@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+<title>언어적 추론 - 추론능력검사</title>
+<script src="../../vendor/jspsych.js"></script>
+<script src="../../vendor/plugin-html-keyboard-response.js"></script>
+<script src="../../assets/flow.js"></script>
+<link href="../../vendor/jspsych.css" rel="stylesheet" type="text/css" />
+<link href="../../assets/engine.css" rel="stylesheet" type="text/css" />
+</head>
+<body></body>
+<script src="data.js"></script>
+<script>
+// ════════════════════════════════════════════════════════════
+// ▼ 문구 수정 구역 — source/pages/make-pages.py 에서 만든 파일입니다(고칠 때는 그 파일을 고치고 다시 생성).
+//   <br> = 줄바꿈, <b>…</b> = 굵게.  문항 그림·정답은 data.js(자동 생성)에 있습니다.
+// ════════════════════════════════════════════════════════════
+window.CFG = {
+ "id": "verbal_reasoning",
+ "lang": "ko",
+ "kind": "choice",
+ "tag": "언어적 추론",
+ "name": "언어적 추론",
+ "badge": "한국추론능력검사 · 보충 소검사 · 만 6~11세",
+ "instr": "지금부터 글을 보고 문제를 풀 거예요.<br>글에 나온 내용을 바탕으로, <b>확실하게 알 수 있는 것만</b> 선택해 주세요.<br>아래 네 가지 문장 중 하나를 눌러 고르면 됩니다.",
+ "prompt": "글을 읽고 확실하게 알 수 있는 것을 골라 주세요.",
+ "explain": [
+  "글을 보면, 민수는 비가 오는 날에 우산을 가져온다고 했어요. 오늘은 비가 온다고 했으니까,<br>민수는 우산을 가져왔다는 것을 알 수 있어요. 따라서 정답은 <b>1번</b>이에요.",
+  "글을 보면, 모든 고양이는 동물이라고 했어요. 그리고 구름이는 고양이라고 했으니까,<br>구름이는 동물이라는 것을 알 수 있어요. 따라서 정답은 <b>2번</b>이에요."
+ ]
+};
+</script>
+<script src="../../assets/engine.js"></script>
+</html>
